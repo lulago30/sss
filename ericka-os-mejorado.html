@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErickaOS - Sistema Operativo Personalizado</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&family=Pacifico&family=Quicksand:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #2d1b2e 0%, #1f2b1a 50%, #2e2419 100%);
+            color: #a8e6a3;
+            overflow-x: hidden;
+            overflow-y: auto;
+            min-height: 100vh;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
+            height: 100%; /* Asegurar altura completa */
+        }
+
+        /* Estrellas de fondo con colores pastel */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        .star.pink { background: #ffb3d9; }
+        .star.yellow { background: #fff4a3; }
+        .star.green { background: #a8e6a3; }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Terminal de Inicio */
+        #terminal-boot {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        #typed {
+            font-size: clamp(14px, 3vw, 20px);
+            font-family: 'Fira Code', monospace;
+            color: #a8e6a3;
+            text-align: left;
+            max-width: 800px;
+            width: 100%;
+            line-height: 1.8;
+            text-shadow: 0 0 10px #a8e6a3;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #a8e6a3;
+            animation: blink 1s infinite;
+            margin-left: 3px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        #enter-btn {
+            margin-top: 40px;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-family: 'Fira Code', monospace;
+            background: transparent;
+            color: #a8e6a3;
+            border: 2px solid #a8e6a3;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            opacity: 0;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(168, 230, 163, 0.3);
+        }
+
+        #enter-btn:hover {
+            background: #a8e6a3;
+            color: #0a0a0a;
+            box-shadow: 0 0 40px rgba(168, 230, 163, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* Dashboard Principal */
+        #dashboard {
+            display: none;
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            min-height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-top: 30px;
+        }
+
+        .dashboard-header h1 {
+            font-family: 'Pacifico', cursive;
+            font-size: clamp(32px, 6vw, 72px);
+            background: linear-gradient(45deg, #ffb3d9, #fff4a3, #a8e6a3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 10px;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 20px rgba(255, 179, 217, 0.5)); }
+            to { filter: drop-shadow(0 0 40px rgba(168, 230, 163, 0.9)); }
+        }
+
+        .subtitle {
+            font-size: clamp(14px, 2.5vw, 24px);
+            color: #fff4a3;
+            letter-spacing: 2px;
+        }
+
+        /* Contenedor de tarjetas */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1400px;
+            margin: 0 auto 40px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 179, 217, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 179, 217, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.6s;
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            border-color: #ffb3d9;
+            box-shadow: 0 15px 50px rgba(255, 179, 217, 0.4);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ffb3d9, #fff4a3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-title {
+            font-size: 22px;
+            color: #ffb3d9;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .card-description {
+            color: #d0d0d0;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffb3d9, #fff4a3, #a8e6a3);
+            border-radius: 10px;
+            animation: progressLoad 2s ease-out;
+        }
+
+        @keyframes progressLoad {
+            from { width: 0; }
+        }
+
+        /* Botones de Acción */
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin: 40px auto;
+            max-width: 900px;
+        }
+
+        .action-btn {
+            padding: 18px 35px;
+            font-size: 16px;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            background: linear-gradient(135deg, rgba(255, 179, 217, 0.2), rgba(168, 230, 163, 0.2));
+            color: #ffb3d9;
+            border: 2px solid #ffb3d9;
+            border-radius: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 179, 217, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .action-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(255, 179, 217, 0.6);
+        }
+
+        .action-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Botón del Susto */
+        #scary-btn {
+            position: fixed;
+            padding: 20px 40px;
+            font-size: 18px;
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #ff6b9d, #ffa07a);
+            color: white;
+            border: 3px solid #ff6b9d;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.15s;
+            z-index: 100;
+            animation: pulse 2s infinite;
+            box-shadow: 0 5px 25px rgba(255, 107, 157, 0.5);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        #scary-btn:hover {
+            animation: wiggle 0.3s;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(45, 27, 46, 0.98), rgba(31, 43, 26, 0.98));
+            border: 3px solid #ffb3d9;
+            border-radius: 25px;
+            padding: 30px 20px;
+            max-width: 600px;
+            width: 100%;
+            margin: 20px auto;
+            text-align: center;
+            animation: modalAppear 0.5s;
+            box-shadow: 0 0 60px rgba(255, 179, 217, 0.6);
+        }
+
+        @keyframes modalAppear {
+            from { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            to { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            color: #ffb3d9;
+            font-size: 32px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-family: 'Pacifico', cursive;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 15px;
+            margin: 15px 0;
+            filter: brightness(1.1) contrast(1.1) saturate(1.2);
+            border: 3px solid #ffb3d9;
+            box-shadow: 0 5px 20px rgba(255, 179, 217, 0.4);
+        }
+
+        .modal-text {
+            color: #fff4a3;
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 15px 0;
+            text-align: left;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border-left: 4px solid #a8e6a3;
+        }
+
+        .modal-story {
+            color: #ffb3d9;
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 15px 0;
+            font-style: italic;
+            padding: 15px;
+            background: rgba(255, 179, 217, 0.1);
+            border-radius: 10px;
+        }
+
+        .close-modal-btn {
+            padding: 15px 35px;
+            background: linear-gradient(135deg, #ffb3d9, #ff6b9d);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Quicksand', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            transition: all 0.3s;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .close-modal-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.6);
+            background: linear-gradient(135deg, #ff6b9d, #ffb3d9);
+        }
+
+        .close-modal-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Perro de Celebración */
+        #celebration-dog {
+            position: fixed;
+            bottom: -300px;
+            right: 50px;
+            width: 250px;
+            opacity: 0;
+            transition: all 1s;
+            z-index: 500;
+            filter: drop-shadow(0 0 20px rgba(255, 179, 217, 0.5));
+        }
+
+        #celebration-dog.show {
+            bottom: 20px;
+            opacity: 1;
+        }
+
+        /* Mensaje de Felicidades */
+        #congrats-message {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 999;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.95);
+            padding: 50px;
+            border-radius: 25px;
+            border: 4px solid #ffb3d9;
+            box-shadow: 0 0 60px rgba(255, 179, 217, 0.7);
+            max-width: 90%;
+        }
+
+        #congrats-message h1 {
+            font-family: 'Pacifico', cursive;
+            font-size: clamp(28px, 5vw, 52px);
+            background: linear-gradient(45deg, #ffb3d9, #fff4a3, #a8e6a3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: neonFlicker 1.5s infinite;
+            margin-bottom: 20px;
+        }
+
+        #congrats-message p {
+            color: #fff4a3;
+            font-size: clamp(14px, 2.5vw, 20px);
+            line-height: 1.8;
+            margin: 15px 0;
+        }
+
+        #congrats-message .emoji-line {
+            font-size: clamp(20px, 4vw, 36px);
+            margin: 10px 0;
+        }
+
+        @keyframes neonFlicker {
+            0%, 100% { opacity: 1; filter: brightness(1); }
+            50% { opacity: 0.85; filter: brightness(1.2); }
+        }
+
+        /* Screamer Container */
+        #screamer-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: redFlash 0.2s infinite;
+        }
+
+        @keyframes redFlash {
+            0%, 100% { background: #000000; }
+            50% { background: #330000; }
+        }
+
+        #screamer-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: scaryShake 0.08s infinite, scaryZoom 0.3s infinite alternate;
+            filter: contrast(1.3) brightness(1.1);
+        }
+
+        @keyframes scaryShake {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            20% { transform: translate(-15px, 15px) rotate(-3deg) scale(1.02); }
+            40% { transform: translate(15px, -15px) rotate(3deg) scale(0.98); }
+            60% { transform: translate(-15px, -15px) rotate(-2deg) scale(1.03); }
+            80% { transform: translate(15px, 15px) rotate(2deg) scale(0.97); }
+            100% { transform: translate(-10px, 10px) rotate(1deg) scale(1); }
+        }
+
+        @keyframes scaryZoom {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        .close-screamer-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            background: #ff0055;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 600;
+            font-size: 18px;
+            z-index: 10000;
+            box-shadow: 0 5px 20px rgba(255, 0, 85, 0.5);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a8e6a3;
+            font-size: 14px;
+            border-top: 1px solid rgba(255, 179, 217, 0.3);
+            margin-top: 60px;
+        }
+
+        footer i {
+            color: #ffb3d9;
+            animation: heartbeat 1.5s infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.3); }
+        }
+
+        footer p {
+            margin: 8px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            /* Fix para scroll en iPhone y dispositivos móviles */
+            html, body {
+                height: 100%;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                position: relative;
+            }
+
+            #dashboard {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: visible;
+                padding-bottom: 60px;
+            }
+
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            #celebration-dog {
+                width: 150px;
+                right: 20px;
+            }
+
+            #scary-btn {
+                padding: 15px 25px;
+                font-size: 14px;
+            }
+
+            .modal {
+                padding: 10px;
+            }
+
+            .modal-content {
+                padding: 20px 15px;
+                margin: 10px auto;
+                border-radius: 15px;
+            }
+
+            .modal-content h2 {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+
+            .modal-story {
+                font-size: 14px;
+                padding: 12px;
+                margin: 10px 0;
+            }
+
+            .modal-text {
+                font-size: 13px;
+                padding: 12px;
+                margin: 10px 0;
+            }
+
+            .modal-image {
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Estrellas de fondo -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Terminal de Inicio -->
+    <div id="terminal-boot">
+        <div id="typed"></div>
+        <button id="enter-btn" style="display: none;">[ ENTRAR ]</button>
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div id="dashboard">
+        <div class="dashboard-header animate__animated animate__fadeInDown">
+            <h1><i class="fas fa-sparkles"></i> ERICKA OS v2.0 <i class="fas fa-heart"></i></h1>
+            <p class="subtitle">✨ Edición Especial de Graduación ✨</p>
+        </div>
+
+        <div class="cards-container">
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
+                <h3 class="card-title">INGENIERA GRADUADA</h3>
+                <p class="card-description">Lo lograste! Después de tanto esfuerzo, noches sin dormir y momentos difíciles, aquí estás: INGENIERA. Te mereces esto y mucho más ✨</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card-icon"><i class="fas fa-music"></i></div>
+                <h3 class="card-title">AMANTE DE LA MÚSICA</h3>
+                <p class="card-description">Le encanta escuchar música y tiene sus playlists secretas que NO comparte con nadie. Sus canciones son un tesoro personal 🎵</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="card-icon"><i class="fas fa-burger"></i></div>
+                <h3 class="card-title">CAZADORA DE HAMBURGUESAS</h3>
+                <p class="card-description">Experta en hamburguesas exóticas y siempre en busca de la próxima aventura culinaria. Las hamburguesas normales no le hacen justicia 🍔</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="card-icon"><i class="fas fa-star"></i></div>
+                <h3 class="card-title">BELLEZA AUTÉNTICA</h3>
+                <p class="card-description">Hermosa tal y como es. Un poco más gordita, un poco más flaquita... no importa. Así está increíble y perfecta. La belleza real no tiene talla 💖</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+                <div class="card-icon"><i class="fas fa-bolt"></i></div>
+                <h3 class="card-title">ENERGÍA INFINITA</h3>
+                <p class="card-description">Batería que nunca se agota. Siempre lista para fiestas, carnavales y celebraciones. Su energía es contagiosa ⚡</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                <div class="card-icon"><i class="fas fa-lightbulb"></i></div>
+                <h3 class="card-title">CREATIVIDAD ILIMITADA</h3>
+                <p class="card-description">Ideas frescas y originales 24/7. Su mente creativa nunca descansa y siempre encuentra soluciones únicas 💡</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.7s;">
+                <div class="card-icon"><i class="fas fa-masks-theater"></i></div>
+                <h3 class="card-title">REINA DE LOS CARNAVALES</h3>
+                <p class="card-description">Ama los carnavales y las fiestas como nadie. Donde hay música y alegría, ahí está ella brillando 🎭🎉</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <div class="glass-card animate__animated animate__fadeInUp" style="animation-delay: 0.8s;">
+                <div class="card-icon"><i class="fas fa-shopping-bag"></i></div>
+                <h3 class="card-title">SHOPAHOLIC PROFESIONAL</h3>
+                <p class="card-description">Compradora compulsiva de maquillaje y ropita. Su colección crece cada día y siempre encuentra "una cosita más" que necesita 💄👗</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn" id="party-btn">
+                <span><i class="fas fa-party-horn"></i> CELEBRAR GRADUACIÓN</span>
+            </button>
+            <button class="action-btn" id="damage-btn">
+                <span><i class="fas fa-heart"></i> REPORTE ESPECIAL</span>
+            </button>
+        </div>
+
+        <!-- Botón del Susto -->
+        <button id="scary-btn">
+            <i class="fas fa-gift"></i> PARA CURIOSOS 👀
+        </button>
+
+        <!-- Perro de Celebración -->
+        <img id="celebration-dog" src="https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif" alt="Celebración">
+
+        <!-- Mensaje de Felicidades -->
+        <div id="congrats-message">
+            <h1>🎓 ¡FELICIDADES INGENIERA! 🎓</h1>
+            <div class="emoji-line">✨ 🌟 💖 🎉 ⚡</div>
+            <p>
+                Hoy no solo celebramos un título, celebramos TODO tu esfuerzo.<br>
+                Las noches de desvelo, los proyectos imposibles, los exámenes difíciles...
+            </p>
+            <p style="color: #ffb3d9; font-weight: 700;">
+                TODO valió la pena. Y esto es solo el comienzo.
+            </p>
+            <p>
+                Te mereces esto y mucho más. Disfruta este momento porque te lo ganaste con sudor, lágrimas y mucha dedicación.
+            </p>
+            <p style="font-size: 0.9em; margin-top: 20px; color: #a8e6a3;">
+                PD: Me caes muy bien... pero más me cae tu mamá jajaja 😄
+            </p>
+        </div>
+
+        <footer>
+            <p><i class="fas fa-heart"></i> © 2026 Ericka Electronics & Co. <i class="fas fa-heart"></i></p>
+            <p>Todos los derechos reservados (y las mordidas también)</p>
+            <p style="margin-top: 15px; font-size: 13px; color: #888;">
+                Hecho con <i class="fas fa-code"></i>, mucho <i class="fas fa-heart"></i> y un toque de <i class="fas fa-magic"></i>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Modal de Mordida -->
+    <div class="modal" id="damage-modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-heartbeat"></i> Reporte Emocional</h2>
+            <img class="modal-image" src="mordida-small.jpg" alt="La famosa mordida">
+            
+            <div class="modal-story">
+                "Esa vez cuando quise expresarte mi cariño con todo mi ser... 
+                y mi forma de demostrarlo fue un poco más intensa de lo planeado 😅
+                <br><br>
+                Ups. Lo siento (pero no tanto). ¡Esas mordidas fueron de puro amor! 
+                <br><br>
+                La evidencia está aquí... Nunca olvidaré ese momento 💕"
+            </div>
+
+            <div class="modal-text">
+                <strong>📊 ANÁLISIS DEL INCIDENTE:</strong><br><br>
+                <i class="fas fa-heart"></i> Tipo: Demostración de afecto extremo<br>
+                <i class="fas fa-teeth"></i> Método: Mordida cariñosa documentada<br>
+                <i class="fas fa-camera"></i> Evidencia: Fotografía adjunta<br>
+                <i class="fas fa-face-grin-hearts"></i> Intención: 100% amor, 0% malicia<br>
+                <i class="fas fa-shield-heart"></i> Estado actual: Recuperada y más fuerte<br><br>
+                <strong style="color: #a8e6a3;">Conclusión: El cariño a veces duele, pero siempre vale la pena ✓</strong><br>
+                <em style="font-size: 0.9em; color: #ffb3d9;">Y quedó la foto como recuerdo eterno 📸</em>
+            </div>
+            
+            <button class="close-modal-btn" id="close-modal">
+                <i class="fas fa-arrow-left"></i> VOLVER ATRÁS
+            </button>
+        </div>
+    </div>
+
+    <!-- Screamer -->
+    <div id="screamer-container">
+        <button class="close-screamer-btn" id="close-screamer">
+            <i class="fas fa-times"></i> CERRAR (si puedes 😱)
+        </button>
+        <img id="screamer-image" src="screamer.png" alt="Screamer">
+    </div>
+
+    <!-- Audio del screamer -->
+    <audio id="screamer-audio" preload="auto" loop>
+        <source src="https://www.myinstants.com/media/sounds/female-scream.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Crear estrellas con colores pastel
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            const colors = ['pink', 'yellow', 'green'];
+            
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.className = 'star ' + colors[Math.floor(Math.random() * colors.length)];
+                star.style.width = Math.random() * 4 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        createStars();
+
+        // Efecto de escritura tipo terminal
+        const terminalTexts = [
+            '> Iniciando ErickaOS v2.0...',
+            '> Cargando módulo de belleza... [100%]',
+            '> Verificando nivel de creatividad... [MÁXIMO]',
+            '> Activando protocolo de graduación... [COMPLETO]',
+            '> Calibrando detector de hamburguesas exóticas... [ACTIVO]',
+            '> Sincronizando playlists secretas... [PROTEGIDO]',
+            '> Actualizando colección de maquillaje... [INFINITO]',
+            '> Energía para carnavales... [ILIMITADA]',
+            '> Sistema listo. Bienvenida, INGENIERA ERICKA 🎓✨'
+        ];
+
+        let currentLine = 0;
+        let currentChar = 0;
+        const typedElement = document.getElementById('typed');
+        const enterBtn = document.getElementById('enter-btn');
+
+        function typeText() {
+            if (currentLine < terminalTexts.length) {
+                if (currentChar < terminalTexts[currentLine].length) {
+                    typedElement.innerHTML += terminalTexts[currentLine][currentChar];
+                    currentChar++;
+                    setTimeout(typeText, 40);
+                } else {
+                    typedElement.innerHTML += '<br>';
+                    currentLine++;
+                    currentChar = 0;
+                    setTimeout(typeText, 400);
+                }
+            } else {
+                typedElement.innerHTML += '<span class="cursor"></span>';
+                enterBtn.style.display = 'inline-block';
+                setTimeout(() => {
+                    enterBtn.style.opacity = '1';
+                }, 200);
+            }
+        }
+
+        setTimeout(typeText, 500);
+
+        // Entrar al dashboard
+        enterBtn.addEventListener('click', function() {
+            document.getElementById('terminal-boot').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            positionScaryButton();
+        });
+
+        // Party Protocol
+        document.getElementById('party-btn').addEventListener('click', function() {
+            // Confetti con colores pastel
+            const duration = 6000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#ffb3d9', '#fff4a3', '#a8e6a3']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#ffb3d9', '#fff4a3', '#a8e6a3']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            // Mostrar perro
+            const dog = document.getElementById('celebration-dog');
+            dog.classList.add('show');
+
+            // Mostrar mensaje
+            const message = document.getElementById('congrats-message');
+            message.style.display = 'block';
+
+            setTimeout(() => {
+                message.style.display = 'none';
+                dog.classList.remove('show');
+            }, 8000);
+        });
+
+        // Modal de Mordida
+        document.getElementById('damage-btn').addEventListener('click', function() {
+            document.getElementById('damage-modal').style.display = 'flex';
+        });
+
+        document.getElementById('close-modal').addEventListener('click', function() {
+            document.getElementById('damage-modal').style.display = 'none';
+        });
+
+        // Cerrar modal al hacer clic fuera de él
+        document.getElementById('damage-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        // Cerrar modal con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('damage-modal').style.display = 'none';
+            }
+        });
+
+        // Botón del Susto - Escapar 5 veces y luego activar screamer
+        const scaryBtn = document.getElementById('scary-btn');
+        let escapeCount = 0;
+        const maxEscapes = 5;
+
+        function positionScaryButton() {
+            const maxX = window.innerWidth - scaryBtn.offsetWidth - 20;
+            const maxY = window.innerHeight - scaryBtn.offsetHeight - 20;
+            
+            const x = Math.max(20, Math.random() * maxX);
+            const y = Math.max(20, Math.random() * maxY);
+            
+            scaryBtn.style.left = x + 'px';
+            scaryBtn.style.top = y + 'px';
+        }
+
+        scaryBtn.addEventListener('mouseenter', function() {
+            if (escapeCount < maxEscapes) {
+                escapeCount++;
+                positionScaryButton();
+                
+                // Cambiar el texto del botón según los escapes
+                if (escapeCount === 1) {
+                    scaryBtn.innerHTML = '<i class="fas fa-running"></i> ¡CASI! 😏';
+                } else if (escapeCount === 2) {
+                    scaryBtn.innerHTML = '<i class="fas fa-laugh"></i> ¡INTENTA DE NUEVO! 😆';
+                } else if (escapeCount === 3) {
+                    scaryBtn.innerHTML = '<i class="fas fa-fire"></i> ¡ESTÁS CERCA! 🔥';
+                } else if (escapeCount === 4) {
+                    scaryBtn.innerHTML = '<i class="fas fa-bolt"></i> ¡UNA MÁS! ⚡';
+                } else if (escapeCount === maxEscapes) {
+                    scaryBtn.innerHTML = '<i class="fas fa-gift"></i> ¡AHORA SÍ! 🎁';
+                    scaryBtn.style.animation = 'pulse 0.5s infinite';
+                }
+            }
+        });
+
+        scaryBtn.addEventListener('click', function() {
+            if (escapeCount >= maxEscapes) {
+                // Activar screamer
+                const screamerContainer = document.getElementById('screamer-container');
+                const screamerAudio = document.getElementById('screamer-audio');
+                
+                screamerContainer.style.display = 'flex';
+                screamerAudio.volume = 1.0;
+                screamerAudio.play();
+                
+                // Vibración en móviles (si está disponible)
+                if (navigator.vibrate) {
+                    // Vibrar en patrón: vibrar 200ms, pausa 100ms, repetir
+                    const vibratePattern = [200, 100, 200, 100, 200, 100, 200];
+                    navigator.vibrate(vibratePattern);
+                    
+                    // Repetir la vibración cada segundo mientras el screamer está activo
+                    window.screamerVibrateInterval = setInterval(() => {
+                        navigator.vibrate(vibratePattern);
+                    }, 1000);
+                }
+                
+                // Intentar fullscreen
+                if (screamerContainer.requestFullscreen) {
+                    screamerContainer.requestFullscreen().catch(err => console.log(err));
+                } else if (screamerContainer.webkitRequestFullscreen) {
+                    screamerContainer.webkitRequestFullscreen();
+                }
+            }
+        });
+
+        document.getElementById('close-screamer').addEventListener('click', function() {
+            const screamerContainer = document.getElementById('screamer-container');
+            const screamerAudio = document.getElementById('screamer-audio');
+            
+            screamerAudio.pause();
+            screamerAudio.currentTime = 0;
+            screamerContainer.style.display = 'none';
+            
+            // Detener vibración
+            if (navigator.vibrate) {
+                navigator.vibrate(0);
+                if (window.screamerVibrateInterval) {
+                    clearInterval(window.screamerVibrateInterval);
+                }
+            }
+            
+            // Salir de fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen().catch(err => console.log(err));
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            }
+            
+            // Resetear botón
+            escapeCount = 0;
+            scaryBtn.innerHTML = '<i class="fas fa-gift"></i> PARA CURIOSOS 👀';
+            positionScaryButton();
+        });
+
+        // Reposicionar botón automáticamente
+        setInterval(() => {
+            if (document.getElementById('dashboard').style.display !== 'none' && escapeCount < maxEscapes) {
+                positionScaryButton();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
